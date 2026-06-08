@@ -1,0 +1,17 @@
+{
+  "name": "crusherflow-backend",
+  "version": "1.0.0",
+  "description": "Simple REST API for CrusherFlow using SQLite",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "init-db": "node init_db.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
+    "sqlite3": "^5.1.6"
+    ,"pg": "^8.11.0"
+  }
+}
+
