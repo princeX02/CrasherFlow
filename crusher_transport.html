@@ -496,7 +496,10 @@ function fmt(n){return Number(n).toLocaleString('en-NP');}
 
 async function apiFetch(path, opts){
   try{
-    const res = await fetch('/api/' + path, opts);
+    // If the page was opened via file:// or other non-http origin, default to localhost server
+    const base = (window.location && window.location.protocol && window.location.protocol.startsWith('http')) ? window.location.origin : 'http://localhost:3000';
+    const url = base + '/api/' + path;
+    const res = await fetch(url, opts);
     if(!res.ok){ const text = await res.text(); throw new Error(text||res.statusText); }
     // some endpoints (export) return non-json; caller will handle
     const ct = res.headers.get('content-type') || '';
