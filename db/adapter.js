@@ -19,6 +19,7 @@ module.exports = {
   async init(){
     await pool.query(`CREATE TABLE IF NOT EXISTS vehicles (id SERIAL PRIMARY KEY, num TEXT UNIQUE, driver TEXT, type TEXT, phone TEXT)`);
     await pool.query(`CREATE TABLE IF NOT EXISTS trips (id SERIAL PRIMARY KEY, vehicleId INTEGER, vehicleNum TEXT, driver TEXT, date TEXT, material TEXT, cft INTEGER, rate REAL, amount REAL, loadTime TEXT, dumpTime TEXT, source TEXT, dest TEXT, note TEXT)`);
+    await pool.query(`CREATE TABLE IF NOT EXISTS users (id SERIAL PRIMARY KEY, username TEXT UNIQUE NOT NULL, password_hash TEXT NOT NULL, role TEXT DEFAULT 'user', created_at TIMESTAMP DEFAULT now())`);
     const v = await pool.query('SELECT COUNT(*)::int as c FROM vehicles');
     if(v.rows[0].c === 0){
       const seed = [
