@@ -2,6 +2,11 @@
 
 This workspace includes a minimal Node.js backend (PostgreSQL) that serves a small REST API for vehicles and trips. It is intentionally lightweight so you can run it locally and connect the frontend later.
 
+Dependency manifest
+
+- `package.json` and `package-lock.json` are the real install files for this project.
+- `requirements.txt` is included as a human-readable download/install checklist.
+
 Setup
 
 1. Install dependencies:
@@ -84,3 +89,20 @@ npm start
 You can customize credentials by editing the `docker-compose.yml` environment variables or by providing your own `DATABASE_URL`.
 
 Security note: for production do not use the example passwords; instead provision a managed Postgres service or secure the container behind a private network.
+
+Render free deployment
+----------------------
+
+This project includes `render.yaml` so you can deploy the Docker image to a Render free web service.
+
+Important: Render's free web service is suitable for the app, but its managed Postgres offering may not be free. For a free database, use an external free PostgreSQL provider such as Neon or Supabase and paste the connection string into `DATABASE_URL`.
+
+Steps:
+
+1. Push this repo to GitHub.
+2. In Render, create a new Blueprint from the repository and select `render.yaml`.
+3. Create or attach a free PostgreSQL database from Neon/Supabase and copy its connection string.
+4. Add the connection string as the `DATABASE_URL` environment variable in Render.
+5. Deploy the service and check `GET /api/ping`.
+
+If you want to keep using Docker locally, this app still works with the included `docker-compose.yml` and `Dockerfile`.

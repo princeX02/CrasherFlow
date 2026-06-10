@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: crusherflow-backend
+    env: docker
+    plan: free
+    autoDeploy: true
+    healthCheckPath: /api/ping
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: DATABASE_URL
+        sync: false
