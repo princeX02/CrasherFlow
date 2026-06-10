@@ -59,10 +59,19 @@ app.post('/api/trips', async (req,res)=>{
   const t = req.body;
   if(!t.vehicleId||!t.date||!t.material||!t.cft||!t.rate) return res.status(400).json({error:'required fields missing'});
   try{
+    let vehicleNum = t.vehicleNum || '';
+    let driver = t.driver || '';
+    if(!vehicleNum || !driver){
+      const vv = await db.get('SELECT num, driver FROM vehicles WHERE id=?',[t.vehicleId]);
+      if(vv){
+        vehicleNum = vehicleNum || vv.num || '';
+        driver = driver || vv.driver || '';
+      }
+    }
     const r = await db.run(
       `INSERT INTO trips(vehicleId,vehicleNum,driver,date,material,cft,rate,amount,loadTime,dumpTime,source,dest,note)
        VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)`,
-      [t.vehicleId,t.vehicleNum||'',t.driver||'',t.date,t.material,t.cft,t.rate,Math.round(t.cft*t.rate),t.loadTime||'',t.dumpTime||'',t.source||'',t.dest||'',t.note||'']
+      [t.vehicleId,vehicleNum,driver,t.date,t.material,t.cft,t.rate,Math.round(t.cft*t.rate),t.loadTime||'',t.dumpTime||'',t.source||'',t.dest||'',t.note||'']
     );
     const id = r.lastID;
     const row = await db.all('SELECT * FROM trips WHERE id=?',[id]);

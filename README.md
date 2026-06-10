@@ -1,6 +1,6 @@
 # CrusherFlow — Local backend (SQLite)
 
-This workspace includes a minimal Node.js + SQLite backend that serves a small REST API for vehicles and trips. It is intentionally lightweight so you can run it locally and connect the frontend later.
+This workspace includes a minimal Node.js backend (PostgreSQL) that serves a small REST API for vehicles and trips. It is intentionally lightweight so you can run it locally and connect the frontend later.
 
 Setup
 
@@ -11,13 +11,21 @@ cd /Users/princechaudhary/Desktop/te
 npm install
 ```
 
-2. Initialize the database (creates `data.db` with sample data):
+2. Start a PostgreSQL instance (local Docker Compose example included):
+
+```bash
+docker compose up -d
+export DB_TYPE=pg
+export DATABASE_URL="postgres://crusher:crusherpass@localhost:5432/crusherflow"
+```
+
+3. Initialize the database schema and seed data:
 
 ```bash
 npm run init-db
 ```
 
-3. Start the server:
+4. Start the server:
 
 ```bash
 npm start
@@ -38,22 +46,15 @@ Endpoints
 
 Next step: I can wire the frontend (`crusher_transport.html`) to use these endpoints (fetch) instead of localStorage. Want me to implement that now?
 
-Switching databases
+Database
 
-By default the backend uses SQLite (file `data.db`) — no extra setup required.
+This project now uses PostgreSQL by default. If you prefer a different provider, set `DATABASE_URL` to point at your Postgres instance.
 
-- To use PostgreSQL instead, set `DB_TYPE=pg` and provide `DATABASE_URL` (e.g. `postgres://user:pass@localhost:5432/dbname`) before running `npm run init-db` and `npm start`.
-
-Examples:
+Examples (local Docker Compose):
 
 ```bash
-# SQLite (default)
-npm run init-db
-npm start
-
-# PostgreSQL
-export DB_TYPE=pg
-export DATABASE_URL="postgres://user:pass@localhost:5432/crusherflow"
+docker compose up -d
+export DATABASE_URL="postgres://crusher:crusherpass@localhost:5432/crusherflow"
 npm run init-db
 npm start
 ```

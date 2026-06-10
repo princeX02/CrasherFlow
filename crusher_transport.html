@@ -494,10 +494,44 @@ let trips = [];
 
 function fmt(n){return Number(n).toLocaleString('en-NP');}
 
+function normalizeVehicle(v){
+  return {
+    ...v,
+    id: v && v.id !== undefined ? String(v.id) : '',
+    num: (v && v.num) ? String(v.num) : '',
+    driver: (v && v.driver) ? String(v.driver) : '',
+    type: (v && v.type) ? String(v.type) : '',
+    phone: (v && v.phone) ? String(v.phone) : ''
+  };
+}
+
+function normalizeTrip(t){
+  const vehicleNum = t.vehicleNum ?? t.vehiclenum ?? '';
+  const loadTime = t.loadTime ?? t.loadtime ?? '';
+  const dumpTime = t.dumpTime ?? t.dumptime ?? '';
+  return {
+    ...t,
+    id: t && t.id !== undefined ? String(t.id) : '',
+    vehicleId: t && t.vehicleId !== undefined ? String(t.vehicleId) : (t && t.vehicleid !== undefined ? String(t.vehicleid) : ''),
+    vehicleNum: String(vehicleNum || ''),
+    driver: String(t.driver || ''),
+    material: String(t.material || ''),
+    cft: Number(t.cft || 0),
+    rate: Number(t.rate || 0),
+    amount: Number(t.amount || 0),
+    date: String(t.date || ''),
+    loadTime: String(loadTime || ''),
+    dumpTime: String(dumpTime || ''),
+    source: String(t.source || ''),
+    dest: String(t.dest || ''),
+    note: String(t.note || '')
+  };
+}
+
 async function apiFetch(path, opts){
   try{
-    // If the page was opened via file:// or other non-http origin, default to localhost server
-    const base = (window.location && window.location.protocol && window.location.protocol.startsWith('http')) ? window.location.origin : 'http://localhost:3000';
+    // Always target the API server directly so the UI works from Five Server or file:// pages too.
+    const base = 'http://localhost:3000';
     const url = base + '/api/' + path;
     const res = await fetch(url, opts);
     if(!res.ok){ const text = await res.text(); throw new Error(text||res.statusText); }
@@ -510,8 +544,10 @@ async function apiFetch(path, opts){
 
 async function loadData(){
   try{
-    vehicles = await apiFetch('vehicles');
-    trips = await apiFetch('trips');
+    const vRows = await apiFetch('vehicles');
+    const tRows = await apiFetch('trips');
+    vehicles = Array.isArray(vRows) ? vRows.map(normalizeVehicle) : [];
+    trips = Array.isArray(tRows) ? tRows.map(normalizeTrip) : [];
     updateBadges();
     // re-render current view
     const renders = {dashboard:renderDash, vehicles:renderVehicles, addtrip:setupTripForm, records:renderRec, reports:renderReports};
@@ -613,8 +649,11 @@ function renderDash(){
   // Top vehicles
   let vmap={};
   trips.forEach(t=>{
-    if(!vmap[t.vehicleNum])vmap[t.vehicleNum]={num:t.vehicleNum,driver:t.driver,trips:0,cft:0,amount:0};
-    vmap[t.vehicleNum].trips++;vmap[t.vehicleNum].cft+=t.cft;vmap[t.vehicleNum].amount+=t.amount;
+    const vv = vehicles.find(v=>String(v.id)===String(t.vehicleId));
+    const vNum = t.vehicleNum || (vv ? vv.num : 'Unknown Vehicle');
+    const vDrv = t.driver || (vv ? vv.driver : '—');
+    if(!vmap[vNum])vmap[vNum]={num:vNum,driver:vDrv,trips:0,cft:0,amount:0};
+    vmap[vNum].trips++;vmap[vNum].cft+=t.cft;vmap[vNum].amount+=t.amount;
   });
   let top = Object.values(vmap).sort((a,b)=>b.amount-a.amount).slice(0,5);
   document.querySelector('#top-veh-tbl tbody').innerHTML = top.map((v,i)=>`
@@ -638,8 +677,8 @@ function renderDash(){
   document.querySelector('#recent-tbl tbody').innerHTML = recent.map(t=>`
     <tr>
       <td class="num">${t.date}</td>
-      <td>${t.vehicleNum}</td>
-      <td style="color:var(--text3)">${t.driver}</td>
+      <td>${t.vehicleNum || ((vehicles.find(v=>String(v.id)===String(t.vehicleId))||{}).num || 'Unknown Vehicle')}</td>
+      <td style="color:var(--text3)">${t.driver || ((vehicles.find(v=>String(v.id)===String(t.vehicleId))||{}).driver || '—')}</td>
       <td><span class="badge badge-${t.material.toLowerCase().slice(0,3)}">${t.material}</span></td>
       <td class="num">${t.cft}</td>
       <td class="num">NPR ${fmt(t.rate)}</td>
@@ -720,7 +759,7 @@ function saveTrip(){
   let cft=parseFloat(document.getElementById('t-cft').value);
   let rate=parseFloat(document.getElementById('t-rate').value);
   if(!vid||!date||!mat||!cft||!rate){setMsg('t-msg','Please fill all required fields *','err');return;}
-  let v=vehicles.find(x=>x.id===vid);
+  let v=vehicles.find(x=>String(x.id)===String(vid));
   const payload = {
     vehicleId: vid,
     vehicleNum: v ? v.num : '',
@@ -818,8 +857,11 @@ function renderReports(){
   // Vehicle summary
   let vmap={};
   trips.forEach(t=>{
-    if(!vmap[t.vehicleNum])vmap[t.vehicleNum]={num:t.vehicleNum,driver:t.driver,trips:0,cft:0,amount:0};
-    vmap[t.vehicleNum].trips++;vmap[t.vehicleNum].cft+=t.cft;vmap[t.vehicleNum].amount+=t.amount;
+    const vv = vehicles.find(v=>String(v.id)===String(t.vehicleId));
+    const vNum = t.vehicleNum || (vv ? vv.num : 'Unknown Vehicle');
+    const vDrv = t.driver || (vv ? vv.driver : '—');
+    if(!vmap[vNum])vmap[vNum]={num:vNum,driver:vDrv,trips:0,cft:0,amount:0};
+    vmap[vNum].trips++;vmap[vNum].cft+=t.cft;vmap[vNum].amount+=t.amount;
   });
   let vsorted=Object.values(vmap).sort((a,b)=>b.amount-a.amount);
   document.querySelector('#veh-sum-tbl tbody').innerHTML=vsorted.map((v,i)=>`
@@ -866,9 +908,22 @@ function renderReports(){
 }
 
 // ── EXPORT ────────────────────────────────────────────────────────────────────
-function exportCSV(){
-  // Use backend CSV export endpoint
-  window.open('/api/export.csv','_blank');
+async function exportCSV(){
+  try{
+    const res = await fetch('http://localhost:3000/api/export.csv');
+    if(!res.ok) throw new Error('Export failed');
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'crusher_trips_' + new Date().toISOString().split('T')[0] + '.csv';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }catch(e){
+    alert('Failed to download CSV. Please try again.');
+  }
 }
 function exportReport(){
   let ta=trips.reduce((a,t)=>a+t.amount,0);
